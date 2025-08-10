@@ -43,7 +43,7 @@ class ChapterDetailSerializer(serializers.ModelSerializer):
 class ChapterCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chapter
-        fields = ('title', 'description', 'language', 'user')
+        fields = ('title', 'description', 'source_language', "target_language", 'original_file')
         read_only_fields = ('user',)
 
     def validate_original_file(self):
