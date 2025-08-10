@@ -48,6 +48,10 @@ INSTALLED_APPS = [
     "accounts",
     "rest_framework_simplejwt",
     "chapters",
+    'storages',
+    'django_filters',
+    'processing',
+
     
 ]
 
@@ -102,6 +106,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "mangamorph.wsgi.application"
 
 
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -147,7 +152,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -158,3 +162,48 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = True   
 CORS_ALLOW_CREDENTIALS = True
 AUTH_USER_MODEL = 'accounts.User'
+
+# AWS S3 settings
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = 'us-east-1'
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+AWS_DEFAULT_ACL = None
+
+_S3_COMMON_OPTIONS = {
+    "access_key": AWS_ACCESS_KEY_ID,
+    "secret_key": AWS_SECRET_ACCESS_KEY,
+    "bucket_name": AWS_STORAGE_BUCKET_NAME,
+    "region_name": AWS_S3_REGION_NAME,
+
+    "querystring_auth": False,   # signed URLs off for public buckets
+    "custom_domain": AWS_S3_CUSTOM_DOMAIN,
+    # Optional but recommended:
+    # "object_parameters": {"CacheControl": "max-age=31536000, s-maxage=31536000, immutable"},
+    # "signature_version": "s3v4",
+}
+
+
+STORAGES = {
+    # MEDIA (user uploads)
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_S3_COMMON_OPTIONS,
+            "location": "media",              # folder/prefix in your bucket
+            "file_overwrite": False,          # don't overwrite same-named uploads
+        },
+    },
+    # STATIC (collectstatic)
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_S3_COMMON_OPTIONS,
+            "location": "static",             # folder/prefix in your bucket
+        },
+    },
+}
+
+STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"

@@ -30,6 +30,9 @@ class ChapterSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('id', 'created_at', 'updated_at', 'user', 'total_pages', 'processed_at')
 
+    def get_total_pages(self, obj):
+        return obj.total_pages
+
 class ChapterDetailSerializer(serializers.ModelSerializer):
     pages = PageSerializer(many=True, read_only=True)
     settings = ChapterSettingsSerializer(read_only=True)
@@ -46,16 +49,15 @@ class ChapterCreateSerializer(serializers.ModelSerializer):
         fields = ('title', 'description', 'source_language', "target_language", 'original_file')
         read_only_fields = ('user',)
 
-    def validate_original_file(self):
-        original_file = self.validated_data.get('original_file')
-        if original_file:
-            if original_file.size > 250 * 1024 * 1024:  # 250 MB limit
+    def validate_original_file(self, value):
+        if value:
+            if value.size > 250 * 1024 * 1024:  # 250 MB limit
                 raise serializers.ValidationError("File size exceeds 250 MB limit.")
             
             allowed_extensions = ['.zip', '.cbz']
-            if not any(original_file.name.lower().endswith(ext) for ext in allowed_extensions):
+            if not any(value.name.lower().endswith(ext) for ext in allowed_extensions):
                 raise serializers.ValidationError("Unsupported file format. Only .zip and .cbz files are allowed.")
-            
-        return original_file
+
+        return value
 
 

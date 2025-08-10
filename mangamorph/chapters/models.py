@@ -14,6 +14,7 @@ class Chapter(models.Model):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='uploading')
+    description = models.TextField(blank=True)
     source_language = models.CharField(max_length=10, default='ja')
     target_language = models.CharField(max_length=10, default='en')
     original_file = models.FileField(upload_to='uploads')
