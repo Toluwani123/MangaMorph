@@ -7,6 +7,9 @@ from .serializers import (
     ChapterSerializer, ChapterDetailSerializer, ChapterCreateSerializer,
     PageSerializer, TextBlockSerializer, ChapterSettingsSerializer
 )
+import time
+
+from processing.tasks import process_manga_file  # Assuming you have a task to process the manga file
 
 class ChapterListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -22,7 +25,8 @@ class ChapterListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         chapter = serializer.save(user=self.request.user)
         ChapterSettings.objects.create(chapter=chapter)
-        #process_chapter(chapter)  # Assuming you have a function to process the chapter
+        time.sleep(4)  # Simulate a delay for processing
+        process_manga_file(chapter.id)  # Call the Celery task asynchronously
 
     
 class ChapterDetailView(generics.RetrieveUpdateDestroyAPIView):

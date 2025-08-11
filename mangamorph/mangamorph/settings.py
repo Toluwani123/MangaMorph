@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'storages',
     'django_filters',
     'processing',
+    'django_celery_beat',
+    'django_celery_results',
 
     
 ]
@@ -207,3 +209,13 @@ STORAGES = {
 
 STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
 MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")

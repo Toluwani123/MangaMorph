@@ -11,11 +11,16 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.utils.translation import gettext as _
 import logging
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "mangamorph/tranquil-scion-468622-f6-a11318980add.json"
-
+credential_path = getattr(settings, "GOOGLE_APPLICATION_CREDENTIALS", None) or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if credential_path:
+    # Works with forward slashes or raw/backslash-safe
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credential_path
+else:
+    logger.warning("GOOGLE_APPLICATION_CREDENTIALS not set; Google APIs may fail.")
 
 class GoogleVisionService:
     def __init__(self):
@@ -32,14 +37,22 @@ class GoogleVisionService:
             text_blocks = []
 
             for text in texts:
-                vertices = [(vertex.x, vertex.y) for vertex in text.bounding_poly.vertices]
+                verts = text.bounding_poly.vertices
+                x_coords = [v.x for v in verts]
+                y_coords = [v.y for v in verts]
+                left, top = min(x_coords), min(y_coords)
+                right, bottom = max(x_coords), max(y_coords)
+                width = max(1, right - left)
+                height = max(1, bottom - top)
                 text_blocks.append({
                     'original_text': text.description,
-                    'x': min(vertices[0][0]),
-                    'y': min(vertices[0][1]),
-                    'width': max(vertices[2][0]) - min(vertices[0][0]),
-                    'height': max(vertices[2][1]) - min(vertices[0][1]),
-                    'confidence_score': text.confidence if hasattr(text, 'confidence') else 0.9
+                    'bounding_box': {
+                        'x': left,
+                        'y': top,
+                        'width': width,
+                        'height': height
+                    },
+                    'confidence_score': getattr(text, 'confidence', 0.9)
                 })
             return text_blocks
         except Exception as e:
@@ -124,9 +137,11 @@ class MangaProcessingService:
             logger.error(f"Error processing page text: {e}")
             return []
         
-    def generate_thumbnail(self, images):
+    def generate_thumbnail(self, image_bytes):
         try:
-            img= Image.open(BytesIO(images[0]['content']))
+            img = Image.open(BytesIO(image_bytes))
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
             img.thumbnail((200, 300), Image.Resampling.LANCZOS)
             output = BytesIO()
             img.save(output, format='JPEG', quality=85)

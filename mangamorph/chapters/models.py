@@ -67,7 +67,7 @@ class TextBlock(models.Model):
     class Meta:
         ordering = ['y', 'x']
     def __str__(self):
-        return f"TextBlock on {self.page} - {self.original_text[:50]} of {self.page.chapter.title}"
+        return f"TextBlock on {self.page} - {self.original_text} of {self.page.chapter.title}"
 
 class ChapterSettings(models.Model):
     chapter = models.OneToOneField(Chapter, on_delete=models.CASCADE, related_name='settings')
