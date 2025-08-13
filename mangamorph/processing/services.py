@@ -12,6 +12,7 @@ from django.core.files.storage import default_storage
 from django.utils.translation import gettext as _
 import logging
 from django.conf import settings
+from google.cloud.vision_v1.types import TextAnnotation as TA
 
 logger = logging.getLogger(__name__)
 
@@ -26,38 +27,62 @@ class GoogleVisionService:
     def __init__(self):
         self.client = vision.ImageAnnotatorClient()
 
-    def detect_text(self, image):
-        try:
-            image = vision.Image(content=image)
-            response = self.client.text_detection(image=image)
-            if response.error.message:
-                raise Exception(f"Google Vision API error: {response.error.message}")
-            
-            texts = response.text_annotations
-            text_blocks = []
+    def _verts_to_box(self, vertices):
+        x_coords = [v.x for v in vertices]
+        y_coords = [v.y for v in vertices]
+        left, top = int(min(x_coords)), int(min(y_coords))
+        right, bottom = int(max(x_coords)), int(max(y_coords))
+        width = int(max(1, right - left))
+        height = int(max(1, bottom - top))
+        return {
+            'x': left,
+            'y': top,
+            'width': width,
+            'height': height
+        }
+    
+    def _paragraph_text_and_conf(self, paragraph):
+        space = {TA.DetectedBreak.BreakType.SPACE, TA.DetectedBreak.BreakType.EOL_SURE_SPACE}
+        line = TA.DetectedBreak.BreakType.LINE_BREAK
 
-            for text in texts:
-                verts = text.bounding_poly.vertices
-                x_coords = [v.x for v in verts]
-                y_coords = [v.y for v in verts]
-                left, top = min(x_coords), min(y_coords)
-                right, bottom = max(x_coords), max(y_coords)
-                width = max(1, right - left)
-                height = max(1, bottom - top)
-                text_blocks.append({
-                    'original_text': text.description,
-                    'bounding_box': {
-                        'x': left,
-                        'y': top,
-                        'width': width,
-                        'height': height
-                    },
-                    'confidence_score': getattr(text, 'confidence', 0.9)
-                })
-            return text_blocks
-        except Exception as e:
-            logger.error(f"Error in Google Vision API: {e}")
-            raise
+        pieces, confidences = [], []
+        for word in paragraph.words:
+            for sym in word.symbols:
+                pieces.append(sym.text)
+                br = getattr(sym.property, "detected_break", None)
+                if br and br.type_ in space:
+                    pieces.append(" ")
+                elif br and br.type_ == line:
+                    pieces.append("\n")
+                if hasattr(sym, "confidence"):
+                    confidences.append(sym.confidence)
+
+        text = ''.join(pieces).strip()
+        conf = sum(confidences) / len(confidences) if confidences else 0.9
+        return text, conf
+    
+    def detect_text(self, image_bytes):
+        img = vision.Image(content=image_bytes)
+        ctx = vision.ImageContext(language_hints=['ja'])
+        response = self.client.document_text_detection(image=img, image_context=ctx)
+        if response.error.message:
+            raise RuntimeError(response.error.message)
+        
+        blocks =[]
+        ann = response.full_text_annotation
+        for page in ann.pages:
+            for block in page.blocks:
+                for para in block.paragraphs:
+                    text,conf = self._paragraph_text_and_conf(para)
+                    if not text:
+                        continue
+                    bbox = self._verts_to_box(para.bounding_box.vertices)
+                    blocks.append({
+                        'bounding_box': bbox,
+                        'original_text': text,
+                        'confidence_score': conf
+                    })
+        return blocks
 
 class GoogleTranslateService:
     def __init__(self):
@@ -77,6 +102,39 @@ class MangaProcessingService:
     def __init__(self):
         self.vision_service = GoogleVisionService()
         self.translate_service = GoogleTranslateService()
+
+    def _merge_nearby(self, blocks, iou=0.20, gap_px=20):
+        """Heuristic merge to avoid multiple fragments per balloon."""
+        # Convert % back to px using width/height if you prefer; or compute IoU on %.
+        def rect(b):
+            return (b["x"], b["y"], b["x"]+b["width"], b["y"]+b["height"])
+
+        merged = []
+        for b in sorted(blocks, key=lambda x: (x["y"], x["x"])):
+            placed = False
+            for m in merged:
+                # simple overlap / proximity test in percentage space
+                ax1, ay1, ax2, ay2 = rect(b); bx1, by1, bx2, by2 = rect(m)
+                inter_w = max(0, min(ax2, bx2) - max(ax1, bx1))
+                inter_h = max(0, min(ay2, by2) - max(ay1, by1))
+                inter = inter_w * inter_h
+                area_a = (ax2-ax1)*(ay2-ay1); area_b = (bx2-bx1)*(by2-by1)
+                iou_val = inter / (area_a + area_b - inter) if (area_a+area_b-inter) else 0
+
+                close_vertically = abs((ay1+ay2)/2 - (by1+by2)/2) < 5  # 5% height
+                if iou_val >= iou or close_vertically:
+                    # merge text with newline; expand box
+                    m["original_text"] = (m["original_text"] + "\n" + b["original_text"]).strip()
+                    m["translated_text"] = (m["translated_text"] + "\n" + b["translated_text"]).strip()
+                    m["x"] = min(m["x"], b["x"])
+                    m["y"] = min(m["y"], b["y"])
+                    m["width"] = max(m["x"]+m["width"], b["x"]+b["width"]) - m["x"]
+                    m["height"] = max(m["y"]+m["height"], b["y"]+b["height"]) - m["y"]
+                    placed = True
+                    break
+            if not placed:
+                merged.append(dict(b))
+        return merged
 
 
     def extract_images_from_zip(self, file_path):
@@ -132,7 +190,7 @@ class MangaProcessingService:
                     'confidence_score': block['confidence_score']
                 })
 
-            return processed_text_blocks
+            return self._merge_nearby(processed_text_blocks)
         except Exception as e:
             logger.error(f"Error processing page text: {e}")
             return []
