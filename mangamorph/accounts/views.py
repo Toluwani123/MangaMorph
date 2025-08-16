@@ -1,5 +1,5 @@
 from rest_framework import status, generics, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
@@ -8,6 +8,7 @@ from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerial
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@authentication_classes([])
 def register(request):
     serializer = UserRegisterSerializer(data=request.data)
     if serializer.is_valid():
@@ -22,6 +23,7 @@ def register(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@authentication_classes([])
 def login(request):
     serializer = UserLoginSerializer(data=request.data)
     if serializer.is_valid():
