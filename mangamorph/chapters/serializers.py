@@ -28,7 +28,7 @@ class ChapterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chapter
         fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'updated_at', 'user', 'total_pages', 'processed_at')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'user', 'total_pages', 'processed_at', 'status', 'settings')
 
     def get_total_pages(self, obj):
         return obj.total_pages

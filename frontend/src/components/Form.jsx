@@ -37,7 +37,7 @@ function Form({ route, method }) {
       if (isLogin) {
         localStorage.setItem(ACCESS_TOKEN, response.data.access);
         localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
-        navigate("/protected");
+        navigate("/dashboard");
       } else {
         alert("Registration successful");
         navigate("/login");

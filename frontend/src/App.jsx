@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoutes';
+import Layout from './components/layout';
+import Dashboard from './pages/Dashboard';
 
 
 function Logout () {
@@ -30,11 +32,9 @@ function App() {
         <Route path="/register" element={<RegisterandLogout />} />
         <Route path="*" element={<NotFound />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/protected" element={
-          <ProtectedRoute>
-            <h1>Protected Page</h1>
-          </ProtectedRoute>
-        } />
+        <Route element={<ProtectedRoute><Layout/></ProtectedRoute>}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
       </Routes>
     </Router>
   )
