@@ -7,6 +7,9 @@ import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoutes';
 import Layout from './components/layout';
 import Dashboard from './pages/Dashboard';
+import Upload from './pages/Upload';
+import Projects from './pages/Projects';
+import Editor from './pages/Editor';
 
 
 function Logout () {
@@ -34,6 +37,9 @@ function App() {
         <Route path="/logout" element={<Logout />} />
         <Route element={<ProtectedRoute><Layout/></ProtectedRoute>}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/upload" element={<Upload />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/edit" element={<Editor />} />
         </Route>
       </Routes>
     </Router>
