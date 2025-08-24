@@ -57,28 +57,55 @@ class ChapterSettingsSerializer(serializers.ModelSerializer):
 class ChapterSerializer(serializers.ModelSerializer):
     total_pages = serializers.SerializerMethodField()
     settings = ChapterSettingsSerializer(read_only=True)
+    completion_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = Chapter
         fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'updated_at', 'user', 'total_pages', 'processed_at', 'status', 'settings')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'user', 'total_pages', 'processed_at', 'status', 'settings', 'completion_percentage')
 
     def get_total_pages(self, obj):
         return obj.total_pages
+    
+    def get_completion_percentage(self, obj):
+        total = TextBlock.objects.filter(page__chapter=obj).count()
+        if total == 0:
+            return 0
+        edited = (
+            TextBlock.objects
+            .filter(page__chapter=obj)
+            .exclude(translated_text__isnull=True)
+            .exclude(translated_text__exact="")
+            .count()
+        )
+        return (edited / total) * 100
 
 class ChapterDetailSerializer(serializers.ModelSerializer):
     pages = PageSerializer(many=True, read_only=True)
     settings = ChapterSettingsSerializer(read_only=True)
     total_pages = serializers.SerializerMethodField()
+    completion_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = Chapter
         fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'updated_at', 'user', 'total_pages', 'settings')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'user', 'total_pages', 'settings', 'completion_percentage')
 
     def get_total_pages(self, obj):
-        return obj.total_pages  
-        
+        return obj.total_pages
+
+    def get_completion_percentage(self, obj):
+        total = TextBlock.objects.filter(page__chapter=obj).count()
+        if total == 0:
+            return 0
+        edited = (
+            TextBlock.objects
+            .filter(page__chapter=obj)
+            .exclude(translated_text__isnull=True)
+            .exclude(translated_text__exact="")
+            .count()
+        )
+        return (edited / total) * 100
 
 class ChapterCreateSerializer(serializers.ModelSerializer):
     class Meta:

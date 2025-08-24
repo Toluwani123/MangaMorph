@@ -53,7 +53,7 @@ export default function Projects() {
   const loadProjects = async () => {
     setIsLoading(true);
     try {
-      const data = await chaptersApi.list("-created_date");
+      const data = await chaptersApi.list("-created_at");
       setProjects(data);
     } catch (error) {
       console.error("Error loading projects:", error);
