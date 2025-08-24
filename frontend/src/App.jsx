@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import Projects from './pages/Projects';
 import Editor from './pages/Editor';
+import ChapterViewer from './pages/ChapterViewer';
 
 
 function Logout () {
@@ -40,6 +41,7 @@ function App() {
           <Route path="/upload" element={<Upload />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/edit" element={<Editor />} />
+          <Route path="/chapter/:chapterId" element={<ChapterViewer />} />
         </Route>
       </Routes>
     </Router>

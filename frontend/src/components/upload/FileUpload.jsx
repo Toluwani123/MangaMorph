@@ -94,9 +94,10 @@ export default function FileUpload({
 
       <p className="text-xs text-slate-400 mt-6">
         Supported: ZIP, CBZ • Max size: 250MB
-        <p className="text-xs text-slate-400 mt-6" >Files have to be png or jpg images.</p>
-        
       </p>
+      <p className="text-xs text-slate-400 mt-6" >Files have to be png or jpg images.</p>
+        
+      
       </div>
     </div>
   );

@@ -256,9 +256,11 @@ export default function Projects() {
 
                       {/* Actions */}
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <Button size="sm" variant="ghost" className="flex-1 text-slate-600 hover:text-slate-800">
-                          <Eye className="w-3 h-3 mr-1" />
-                          View
+                        <Button size="sm" variant="ghost" className="flex-1 text-slate-600 hover:text-slate-800" >
+                          <Link to={`/chapter/${project.id}`}>
+                            <Eye className="w-3 h-3 mr-1" />
+                            View
+                          </Link>
                         </Button>
                         <Button size="sm" variant="ghost" className="flex-1 text-slate-600 hover:text-slate-800">
                           <Edit3 className="w-3 h-3 mr-1" />

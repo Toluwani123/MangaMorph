@@ -172,6 +172,9 @@ AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = 'us-east-1'
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = True
+AWS_QUERYSTRING_EXPIRE = 3600  
+
 
 _S3_COMMON_OPTIONS = {
     "access_key": AWS_ACCESS_KEY_ID,
@@ -179,7 +182,7 @@ _S3_COMMON_OPTIONS = {
     "bucket_name": AWS_STORAGE_BUCKET_NAME,
     "region_name": AWS_S3_REGION_NAME,
 
-    "querystring_auth": False,   # signed URLs off for public buckets
+    "querystring_auth": True,   # signed URLs on for private buckets
     "custom_domain": AWS_S3_CUSTOM_DOMAIN,
     # Optional but recommended:
     # "object_parameters": {"CacheControl": "max-age=31536000, s-maxage=31536000, immutable"},
