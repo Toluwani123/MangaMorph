@@ -7,13 +7,46 @@ class TextBlockSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('id', 'page', 'created_at', 'updated_at')
 
+# ...existing code...
 class PageSerializer(serializers.ModelSerializer):
     text_blocks = TextBlockSerializer(many=True, read_only=True)
+    original_image = serializers.SerializerMethodField()
+    processed_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Page
-        fields = '__all__'
-        read_only_fields = ('id', 'chapter', 'created_at', 'text_blocks')
+        fields = (
+            'id', 'chapter', 'page_number', 'width', 'height',
+            'created_at',
+            'original_image', 'processed_image',
+            'text_blocks',
+        )
+        read_only_fields = ('id', 'chapter', 'created_at', 'updated_at', 'text_blocks')
+
+    def _abs(self, url: str):
+        if not url:
+            return None
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request else url
+
+    def _url_or_none(self, fieldfile):
+        try:
+            if not fieldfile:
+                return None
+            # Use storage.url(name) to generate a fresh (pre‑signed) URL on S3
+            url = fieldfile.storage.url(fieldfile.name)
+            return self._abs(url)
+        except Exception:
+            return None
+
+    def get_original_image(self, obj):
+        return self._url_or_none(getattr(obj, "original_image", None))
+
+    def get_processed_image(self, obj):
+        return self._url_or_none(getattr(obj, "processed_image", None))
+# ...existing code...
 
 class ChapterSettingsSerializer(serializers.ModelSerializer):
     class Meta:
