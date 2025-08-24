@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from 'framer-motion';
+import api from "../api";
 
 import { fetchPages, fetchPageDetail } from '@/libs/utils'
 import PageList from '@/components/PageList' // ensure this exists/exports default
@@ -39,10 +40,23 @@ function ChapterViewer() {
   const [mode, setMode] = useState('view');
   const [isLoadingPages, setIsLoadingPages] = useState(true);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [displayMode, setDisplayMode] = useState('pins'); // 'pins' or 'overlays'
+  const [title, setTitle] = useState("");
 
+  const fetchTitle = () => {
+    api.get(`/chapters/${chapterId}/`)
+      .then(response => {
+        
+        setTitle(response.data.title);
+        console.log("Fetched title:", response.data);
+        // Do something with the title, e.g., set it in state
+      })
+      .catch(console.error);
+  };
   useEffect(() => {
     let mounted = true;
     setIsLoadingPages(true);
+    fetchTitle();
     fetchPages(chapterId)
       .then(data => {
         if (!mounted) return;
@@ -94,7 +108,7 @@ function ChapterViewer() {
               className="px-3 py-1 border rounded bg-white/70 hover:bg-white"
               onClick={() => setMode((m) => (m === "view" ? "edit" : "view"))}
             >
-              {mode === "view" ? "Switch to Edit" : "Preview"}
+              {mode === "view" ? "Edit[Coming Soon]" : "Preview"}
             </Button>
             <Button
               className="px-3 py-1 border rounded bg-white/70 hover:bg-white"
@@ -126,6 +140,8 @@ function ChapterViewer() {
             <h3 className="font-semibold mb-3 text-slate-800">
               Pages {isLoadingPages ? '' : `(${pages.length})`}
             </h3>
+
+            
 
             {isLoadingPages ? (
               <div className="space-y-2">
@@ -178,7 +194,7 @@ function ChapterViewer() {
                 >
                   {/* Replace this block with your MangaPageViewer if available */}
                   <MangaPageViewer
-                        imageUrl={pageData.processed_image || pageData.original_image}
+                        imageUrl={pageData.original_image}
                         imageNaturalWidth={pageData.width}
                         imageNaturalHeight={pageData.height}
                         textBoxes={pageData.text_blocks.map(tb => ({
@@ -189,7 +205,7 @@ function ChapterViewer() {
                         }))}
                         zoom={zoom}
                         coordUnits="percent"   // <<< NEW
-                        mode={mode}
+                        displayMode={displayMode}
                     />
                 </motion.div>
               ) : (
@@ -221,15 +237,26 @@ function ChapterViewer() {
             {/* Replace with your TextBubbleEditor component if available */}
             {pageData ? (
               <div className="space-y-3">
+                <div>
+                    Title: <span className="font-medium">{title}</span>
+                </div>
                 <div className="text-sm text-slate-600">
                   Mode: <span className="font-medium">{mode}</span>
                 </div>
+                
                 <Button
-                  className="bg-gradient-to-r from-slate-800 to-amber-600 hover:from-slate-900 hover:to-amber-700"
-                  onClick={handleSaveBubble}
+                className="bg-gray-300 text-gray-500 cursor-not-allowed relative"
+                onClick={null}
                 >
-                  Save Changes
+                    Save Changes
+                    <span className="absolute top-full mt-1 text-xs text-gray-400">Coming soon</span>
                 </Button>
+                <div></div>
+
+                <button className="px-3 py-1 border rounded"
+                    onClick={() => setDisplayMode(m => m === "pins" ? "overlays" : "pins")}>
+                    {displayMode === "pins" ? "Show Overlays" : "Show Pins"}
+                </button>
               </div>
             ) : (
               <div className="text-sm text-slate-500">No page selected</div>

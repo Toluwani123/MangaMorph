@@ -169,11 +169,12 @@ AUTH_USER_MODEL = 'accounts.User'
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = 'us-east-1'
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+AWS_S3_REGION_NAME = 'us-east-2'
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = True
-AWS_QUERYSTRING_EXPIRE = 3600  
+AWS_QUERYSTRING_EXPIRE = 3600 
+AWS_S3_SIGNATURE_VERSION = "s3v4" 
+AWS_S3_ADDRESSING_STYLE = 'virtual'
 
 
 _S3_COMMON_OPTIONS = {
@@ -181,9 +182,11 @@ _S3_COMMON_OPTIONS = {
     "secret_key": AWS_SECRET_ACCESS_KEY,
     "bucket_name": AWS_STORAGE_BUCKET_NAME,
     "region_name": AWS_S3_REGION_NAME,
+    "signature_version": AWS_S3_SIGNATURE_VERSION,
+    "addressing_style": AWS_S3_ADDRESSING_STYLE,
 
     "querystring_auth": True,   # signed URLs on for private buckets
-    "custom_domain": AWS_S3_CUSTOM_DOMAIN,
+    
     # Optional but recommended:
     # "object_parameters": {"CacheControl": "max-age=31536000, s-maxage=31536000, immutable"},
     # "signature_version": "s3v4",
@@ -210,8 +213,9 @@ STORAGES = {
     },
 }
 
-STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
-MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/static/"
+
+MEDIA_URL  = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/media/"
 
 CELERY_BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'

@@ -1,8 +1,9 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {Link, useLocation, Outlet} from "react-router-dom";
 import { Home, Upload, FolderOpen, Edit3, FileText, Zap } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, SidebarProvider, SidebarTrigger } from "./ui/sidebar";
-
+import api from "@/api";
+import { Button } from "./ui/button";
 
 const navigation = [
   {
@@ -31,6 +32,14 @@ const navigation = [
 
 export default function Layout() {
     const location = useLocation();
+    const [user, setUser] = React.useState(null);
+
+    useEffect(() => {
+        api.get("/accounts/profile/")
+            .then(response => setUser(response.data))
+            .catch(console.error);
+    }, []);
+
     return (
         <SidebarProvider>
             <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-slate-100">
@@ -108,14 +117,19 @@ export default function Layout() {
 
                     </SidebarContent>
                     <SidebarFooter className="border-t border-slate-200/60 p-4">
-                        <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-slate-600 to-slate-700 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">U</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-slate-800 text-sm truncate">Translator</p>
-                            <p className="text-xs text-slate-500 truncate">Professional Edition</p>
-                        </div>
+                        <div className="relative group w-full">
+                            <div className="flex items-center gap-3 cursor-default">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-slate-600 to-slate-700 rounded-full flex items-center justify-center">
+                                        <span className="text-white font-semibold text-sm">
+                                            {user?.username}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-slate-800 text-sm truncate">{user?.first_name} {user?.last_name}</p>
+                                        <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                                    </div>
+                                    <div><Button variant="outline" className="w-full"><Link to="/logout">Logout</Link></Button></div>
+                            </div>
                         </div>
                     </SidebarFooter>
 
